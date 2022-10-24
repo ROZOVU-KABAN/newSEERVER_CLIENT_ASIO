@@ -37,7 +37,7 @@ namespace olc
 				if(m_nOwnerType == owner::server)
 				{
 					//cunstruct random data
-					m_nHandshakOut = uint64_t(std::chrono::system_clock::now().time_since_epoch().count());
+					m_nHandshakeOut = uint64_t(std::chrono::system_clock::now().time_since_epoch().count());
 					m_nHandshakeCheck = scramble(m_nHandshakeOut);
 				}
 				else
@@ -300,7 +300,7 @@ namespace olc
 
 			void WriteValidation()
 			{
-				asio::async_write(m_socket, asio::buffer(&m_nHandshakeOut, sizeof(uint_64_t)),
+				asio::async_write(m_socket, asio::buffer(&m_nHandshakeOut, sizeof(uint64_t)),
 					[this](std::error_code ec, std::size_t lenght)
 					{
 						if (!ec)
@@ -318,7 +318,7 @@ namespace olc
 
 			void ReadValidation(olc::net::server_interface<T>* server = nullptr)
 			{
-				asio::async_write(m_socket, asio::buffer(&m_nHandshakeIn, sizeof(uint_64_t)),
+				asio::async_read(m_socket, asio::buffer(&m_nHandshakeIn, sizeof(uint64_t)),
 					[this,server](std::error_code ec, std::size_t lenght)
 					{
 						if (!ec)
@@ -329,7 +329,7 @@ namespace olc
 								{
 									std::cout << "Client validate" << std::endl;
 
-									server->OnClientValidated(this->shared_forom_this());
+									server->OnClientValidated(this->shared_from_this());
 
 									ReadHeader();
 								}
