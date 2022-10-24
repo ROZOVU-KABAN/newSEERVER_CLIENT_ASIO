@@ -10,6 +10,9 @@ namespace olc
 	namespace net
 	{
 		template<typename T>
+		class server_interface;
+
+		template<typename T>
 		class connection : public std::enable_shared_from_this<connection<T>>
 		{
 		public:
@@ -30,6 +33,18 @@ namespace olc
 				m_nOwnerType = parent;
 
 
+				//Cunstruck validation check data
+				if(m_nOwnerType == owner::server)
+				{
+					//cunstruct random data
+					m_nHandshakOut = uint64_t(std::chrono::system_clock::now().time_since_epoch().count());
+					m_nHandshakeCheck = scramble(m_nHandshakeOut);
+				}
+				else
+				{
+					m_nHandshakeIn = 0;
+					m_nHandshakeOut = 0;
+				}
 			}
 
 			virtual ~connection()
@@ -43,14 +58,16 @@ namespace olc
 			}
 
 		public:
-			void ConnectToClient(uint32_t uid = 0)
+			void ConnectToClient(olc::net::server_interface<T>* server, uint32_t uid=0)
 			{
 				if (m_nOwnerType == owner::server)
 				{
 					if (m_socket.is_open())
 					{
 						id = uid;
-						ReadHeader();
+						WriteValidation();
+
+						ReadValidation(server);
 					}
 				}
 			}
@@ -66,7 +83,7 @@ namespace olc
 						{
 							if (!ec)
 							{
-								ReadHeader();
+								ReadValidation();
 							}
 						});
 				}
@@ -280,6 +297,63 @@ namespace olc
 				return out ^ 0xC0DEFACE12345678;
 			}
 
+
+			void WriteValidation()
+			{
+				asio::async_write(m_socket, asio::buffer(&m_nHandshakeOut, sizeof(uint_64_t)),
+					[this](std::error_code ec, std::size_t lenght)
+					{
+						if (!ec)
+						{
+							//Validation data send, client should wait for a response 
+							if (m_nOwnerType == owner::client)
+								ReadHeader();
+						}
+						else
+						{
+							m_socket.close();
+						}
+					});
+			}
+
+			void ReadValidation(olc::net::server_interface<T>* server = nullptr)
+			{
+				asio::async_write(m_socket, asio::buffer(&m_nHandshakeIn, sizeof(uint_64_t)),
+					[this,server](std::error_code ec, std::size_t lenght)
+					{
+						if (!ec)
+						{
+							if (m_nOwnerType == owner::server)
+							{
+								if (m_nHandshakeIn == m_nHandshakeCheck)
+								{
+									std::cout << "Client validate" << std::endl;
+
+									server->OnClientValidated(this->shared_forom_this());
+
+									ReadHeader();
+								}
+								else
+								{
+									std::cout << "Client disconnected (Wrong Validation)" << std::endl;
+									m_socket.close();
+								}
+							}
+							else
+							{
+								m_nHandshakeOut = scramble(m_nHandshakeIn);
+
+								WriteValidation();
+							}
+						}
+						else
+						{
+							std::cout << "Client disconnected (Wrong Validation)" << std::endl;
+							m_socket.close();
+						}
+					});
+			}
+
 		protected:
 			// Each connection has a unique socket to a remote 
 			asio::ip::tcp::socket m_socket;
@@ -308,7 +382,7 @@ namespace olc
 			//Handshake validation
 			uint64_t m_nHandshakeOut = 0;
 			uint64_t m_nHandshakeIn = 0;
-			uint64_t m_nHandshakeChaeck = 0;
+			uint64_t m_nHandshakeCheck = 0;
 		};
 	}
 }
