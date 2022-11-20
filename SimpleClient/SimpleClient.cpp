@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <olc_net.h>
 
 enum class CustomMsgTypes : uint32_t
@@ -31,9 +31,14 @@ public:
 	{
 		olc::net::message<CustomMsgTypes> msg;
 		msg.header.id = CustomMsgTypes::MessageAll;
+		char m[256];
+		std::cout << "Enter your msg: ";
+		gets_s(m, 256);
+		msg << m;
 		Send(msg);
 	}
 };
+
 
 int main()
 {
@@ -54,7 +59,10 @@ int main()
 		}
 
 		if (key[0] && !old_key[0]) c.PingServer();
-		if (key[1] && !old_key[1]) c.MessageAll();
+		if (key[1] && !old_key[1])
+		{
+			c.MessageAll();
+		}
 		if (key[2] && !old_key[2]) bQuit = true;
 
 		for (int i = 0; i < 3; i++) old_key[i] = key[i];
@@ -90,9 +98,9 @@ int main()
 				case CustomMsgTypes::ServerMessage:
 				{
 					// Server has responded to a ping request	
-					uint32_t clientID;
-					msg >> clientID;
-					std::cout << "Hello from [" << clientID << "]\n";
+					char M[256];
+					msg >> M;
+					std::cout<<"Message from client #" << M << "\n";
 				}
 				break;
 				}
