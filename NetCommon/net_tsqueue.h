@@ -15,21 +15,18 @@ namespace olc
 			virtual ~tsqueue() { clear(); }
 
 		public:
-			// Returns and maintains item at front of Queue
 			const T& front()
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
 				return deqQueue.front();
 			}
 
-			// Returns and maintains item at back of Queue
 			const T& back()
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
 				return deqQueue.back();
 			}
 
-			// Removes and returns item from front of Queue
 			T pop_front()
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
@@ -38,7 +35,6 @@ namespace olc
 				return t;
 			}
 
-			// Removes and returns item from back of Queue
 			T pop_back()
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
@@ -47,7 +43,6 @@ namespace olc
 				return t;
 			}
 
-			// Adds an item to back of Queue
 			void push_back(const T& item)
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
@@ -57,7 +52,6 @@ namespace olc
 				cvBlocking.notify_one();
 			}
 
-			// Adds an item to front of Queue
 			void push_front(const T& item)
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
@@ -67,21 +61,18 @@ namespace olc
 				cvBlocking.notify_one();
 			}
 
-			// Returns true if Queue has no items
 			bool empty()
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
 				return deqQueue.empty();
 			}
 
-			// Returns number of items in Queue
 			size_t count()
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
 				return deqQueue.size();
 			}
 
-			// Clears Queue
 			void clear()
 			{
 				std::lock_guard<std::mutex> lock(muxQueue);
