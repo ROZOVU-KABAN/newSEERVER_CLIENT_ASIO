@@ -1,6 +1,9 @@
 ﻿#include <iostream>
 #include <olc_net.h>
-#include <fstream>
+
+#define NFUNC 5
+
+
 enum class CustomMsgTypes : uint32_t
 {
 	ServerAccept,
@@ -9,8 +12,8 @@ enum class CustomMsgTypes : uint32_t
 	MessageAll,
 	ServerMessage,
 	MessageOne,
-	FileName,
-	SendFile,
+	ReadFile,
+	SendFiel,
 };
 
 
@@ -33,8 +36,7 @@ public:
 	{
 		olc::net::message<CustomMsgTypes> msg;
 		msg.header.id = CustomMsgTypes::MessageAll;
-		char m[256];
-		bool incomingMsg = true;
+		char m[256] = {};
 		std::cout << "Enter your msg: ";
 		gets_s(m, 256);
 		msg << m;
@@ -47,52 +49,62 @@ public:
 		msg.header.id = CustomMsgTypes::MessageOne;
 		char m[256];
 		int MPID;
-		//system("cls");
-		std::cout << "\nEnter ID of your message-partner: ";
+		std::cout << "Enter ID of your message-partner: ";
 		std::cin >> MPID;
 		char t;
-		std::cout << "\nEnter your msg: ";
+		std::cout << "Enter your msg: ";
 		scanf_s("%c", &t);
 		gets_s(m, 256);
 		shift(m, 4,MPID);
 		msg << m;
 		Send(msg);
 	}
+	
 	void SendFile()
 	{
-		char path[256];
-		char FielName;
+		std::string path;
+		std::string FielName;
 		std::ifstream fin;
 		do
 		{
-			std::cout << "\nEnter path to File and File name: ";
-			std::cin >> path;
+			std::cout << "Enter path to File and File name: ";
+			getline(std::cin, path);
 			fin.open(path, std::ios_base::binary);
-			if (!fin.is_open()) std::cout << "\nError. File cant be open. Please try one more time.";
+			if (!fin.is_open()) std::cout << "\nError. File cant be open. Please try one more time.\n";
 		} while (!fin.is_open());
 
-		std::cout << "\nEnter File name with extension: ";
-		std::cin >> FielName;
-
+		std::cout << "Enter File name with extension: ";
+		getline(std::cin, FielName);
 
 		olc::net::message<CustomMsgTypes> msg;
-		msg.header.id = CustomMsgTypes::FileName;
-		msg << FielName;
-		Send(msg);
-		// тут нужно прописать у сервера часть с принятием имени файла. 
-		// если имя совпадает, то продолжать прием, иначе критануть с ошибкой
+		msg.header.id = CustomMsgTypes::SendFiel;
+		msg.header.FielName = FielName;
+		char buf[255];
+		char ch;
+		int i = 0;
+	    while (fin.get(ch))
+		{
+			buf[i] = ch;
+			i++;
+			if (i == 255)
+			{
+				msg << buf;
+				Send(msg);
+				ZeroMemory(buf, 255);
+				i = 0;
+			}
+		}
 
-		msg.header.id = CustomMsgTypes::SendFile;
-		char buf[sizeof(int)];
-		fin.read(buf, sizeof(int));
+		if (i > 0)
+		{
+			msg << buf;
+			Send(msg);
+		}
 		fin.close();
-		msg << buf;
-		Send(msg);
-		std::cout << "\n*File was sended*";
+		std::cout << "*File was sended*\n";
 	}
-
 private:
-		void shift(char msg[256],int n,int ID)
+	void shift(char msg[256],int n,int ID)
 	{
 		for (int i = 0; i <n ; i++)
 		{
@@ -104,13 +116,6 @@ private:
 			ID /= 10;
 		}
 	}
-		void Cliner(char* binary)
-		{
-			for (int i = 0; i < 256; i++)
-			{
-				*(binary + i) = ' ';
-			}
-		}
 };
 
 
@@ -118,10 +123,17 @@ int main()
 {
 	CustomClient c;
 	c.Connect("127.0.0.1", 60000);
-
-	bool key[4] = { false, false, false,false };
-	bool old_key[4] = { false, false, false,false };
-
+	//std::cout << "Enter your Nicname: ";
+	//std::string Nickname;
+	//std::cin >> Nickname;
+	bool key[5];
+	bool old_key[5];
+	for (int i = 0; i < NFUNC; i++)
+	{
+		key[i] = false;
+		old_key[i] = false;
+	}
+	std::string path;
 	bool bQuit = false;
 	while (!bQuit)
 	{
@@ -137,10 +149,10 @@ int main()
 		if (key[0] && !old_key[0]) c.PingServer();
 		if (key[1] && !old_key[1]) c.MessageAll();
 		if (key[2] && !old_key[2]) c.MessageOne();
-		if (key[3] && old_key[3])  c.SendFile();
+		if (key[3] && !old_key[3])  c.SendFile();
 		if (key[4] && !old_key[4]) bQuit = true;
 
-		for (int i = 0; i < 5; i++) old_key[i] = key[i];
+		for (int i = 0; i < NFUNC; i++) old_key[i] = key[i];
 
 		if (c.IsConnected())
 		{
@@ -172,7 +184,7 @@ int main()
 				{
 					char M[256];
 					msg >> M;
-					std::cout<<"Message from client #" << M << "\n";
+					std::cout << "Message from client #" << M << "\n";
 				}
 				break;
 				}

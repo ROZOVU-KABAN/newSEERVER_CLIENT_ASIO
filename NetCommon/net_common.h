@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <memory>
 #include <thread>
 #include <mutex>
@@ -9,6 +10,7 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <fstream>
 #include <cstdint>
 
 #ifdef _WIN32

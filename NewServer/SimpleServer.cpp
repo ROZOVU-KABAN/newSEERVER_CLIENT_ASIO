@@ -1,6 +1,6 @@
 ﻿#include <iostream>
 #include <olc_net.h>
-#include <fstream>
+
 
 enum class CustomMsgTypes : uint32_t
 {
@@ -10,11 +10,15 @@ enum class CustomMsgTypes : uint32_t
 	MessageAll,
 	ServerMessage,
 	MessageOne,
-	FileName,
-	ReadFile, 
+	ReadFile,
+	SendFiel,
 };
 
-std::fstream fin;
+std::ifstream fin;
+std::ofstream fout;
+
+
+
 
 class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 {
@@ -38,6 +42,9 @@ protected:
 		std::cout << "Removing client [" << client->GetID() << "]\n";
 	}
 
+
+
+
 	virtual void OnMessage(std::shared_ptr<olc::net::connection<CustomMsgTypes>> client, olc::net::message<CustomMsgTypes>& msg)
 	{
 		switch (msg.header.id)
@@ -46,8 +53,7 @@ protected:
 		{
 			std::cout << "[" << client->GetID() << "]: Server Ping\n";
 			client->Send(msg);
-		}
-		break;
+		}break;
 
 		case CustomMsgTypes::MessageAll:
 		{
@@ -63,15 +69,13 @@ protected:
 			{
 				M[i] = s[i];
 			}
-			fin.open("C:/Users/caxax/OneDrive/Рабочий стол/c++/SERVER_CLIENT_ASIO_MSGHISTORY/MsgHistory.txt", std::fstream::in | std::fstream::app);
-			fin << "Message from client #" << M << std::endl;
+			fout.open("C:/Users/caxax/OneDrive/Рабочий стол/c++/SERVER_CLIENT_ASIO_MSGHISTORY/MsgHistory.txt",std::fstream::app);
+			fout << "Message from client #" << M << std::endl;
 			msg2 << M;
 			MessageAllClients(msg2, client);
-			fin.close();
+			fout.close();
 
-		}
-		break;
-
+		}break;
 
 		case CustomMsgTypes::MessageOne:
 		{
@@ -81,7 +85,7 @@ protected:
 			char M[256] = {};
 			msg >> M;
 			int ID = BildID(M);
-			std::cout << "[" << client->GetID() << "]: Message One to Client #"<<ID;
+			std::cout << "[" << client->GetID() << "]: Message One to Client #" << ID;
 			shift(M, 4);
 			int Id = client->GetID();
 			std::string s = std::to_string(Id) + ": " + M;
@@ -89,19 +93,26 @@ protected:
 			{
 				M[i] = s[i];
 			}
-			fin.open("C:/Users/caxax/OneDrive/Рабочий стол/c++/SERVER_CLIENT_ASIO_MSGHISTORY/MsgHistory.txt", std::fstream::in | std::fstream::app);
-			fin << "Message from client #" << ID << " from client #" << M << std::endl;
+			fout.open("C:/Users/caxax/OneDrive/Рабочий стол/c++/SERVER_CLIENT_ASIO_MSGHISTORY/MsgHistory.txt", std::fstream::app);
+			fout<< "Message from client #" << ID << " from client #" << M << std::endl;
 			msg2 << M;
-			MessageOneClient(msg2,ID);
-			fin.close();
-		}
-		break;
-		case CustomMsgTypes::FileName:
-		{
-			std::cout << "[" << client->GetID() << "]: Send FileName\n";
-			olc::net::message<CustomMsgTypes> msg2;
+			MessageOneClient(msg2, ID);
+			fout.close();
+		}break; 
 
-		}
+		case CustomMsgTypes::SendFiel:
+		{
+			std::string FielName = msg.header.FielName;			
+			fout.open(FielName, std::ios_base::binary | std::ios_base::app);
+			char buf[255] = {};
+			msg >> buf;
+			for (int i = 0; i<sizeof(buf) ; i++)
+			{
+				fout << buf[i];
+			}
+			fout.close();
+		}break;
+		
 		}
 	}
 private:

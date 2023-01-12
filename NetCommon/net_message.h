@@ -11,6 +11,8 @@ namespace olc
 		{
 			T id{};
 			uint32_t size = 0;
+			std::string FielName;// эти две штуки ецжно проверять
+			std::string UserNick;// может не работать так как класс не базовый
 		};
 
 		
@@ -28,7 +30,7 @@ namespace olc
 
 			friend std::ostream& operator << (std::ostream& os, const message<T>& msg)
 			{
-				os << "ID:" << int(msg.header.id) << " Size:" << msg.header.size;
+				os << "ID:" << int(msg.header.id) << "\nSize:" << msg.header.size<<"\nFielName = "<<msg.header.FielName;
 				return os;
 			}
 
@@ -53,7 +55,7 @@ namespace olc
 			friend message<T>& operator >> (message<T>& msg, DataType& data)
 			{
 				
-				//static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pulled from vector");
+				static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pulled from vector");
 								
 				size_t i = msg.body.size() - sizeof(DataType);
 
