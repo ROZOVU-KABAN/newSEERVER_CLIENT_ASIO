@@ -94,13 +94,13 @@ public:
 				i = 0;
 			}
 		}
-
+		fin.close();
 		if (i > 0)
 		{
 			msg << buf;
 			Send(msg);
 		}
-		fin.close();
+		
 		std::cout << "*File was sended*\n";
 	}
 private:

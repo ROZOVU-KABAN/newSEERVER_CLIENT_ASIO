@@ -42,9 +42,6 @@ protected:
 		std::cout << "Removing client [" << client->GetID() << "]\n";
 	}
 
-
-
-
 	virtual void OnMessage(std::shared_ptr<olc::net::connection<CustomMsgTypes>> client, olc::net::message<CustomMsgTypes>& msg)
 	{
 		switch (msg.header.id)
@@ -104,7 +101,8 @@ protected:
 		{
 			std::string FielName = msg.header.FielName;			
 			fout.open(FielName, std::ios_base::binary | std::ios_base::app);
-			char buf[255] = {};
+
+			char buf[255];
 			msg >> buf;
 			for (int i = 0; i<sizeof(buf) ; i++)
 			{
@@ -115,6 +113,9 @@ protected:
 		
 		}
 	}
+
+
+
 private:
 	void shift(char msg[256], int n)
 	{
@@ -141,7 +142,7 @@ private:
 
 int main()
 {
-	CustomServer server(60000);
+	CustomServer server(60000);~
 	server.Start();
 
 	while (1)
